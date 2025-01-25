@@ -1,0 +1,276 @@
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body{
+    font-family: 'Roboto', sans-serif;
+    position: relative;
+}
+
+
+/*login and register*/
+.login-container,
+.register-container{
+    display: flex;
+    width: 90vw;
+    height: 90vh;
+    justify-content: center;
+    align-items: center; 
+    margin: 50px auto;
+    border: none;
+    box-shadow: 0px 0px 10px black;
+    border-radius: 10px;
+    position: relative;
+  
+}
+
+.image-container{
+    background-color: white;
+    width: 55%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center; 
+    border-radius: 10px 0 0 10px;
+    border: none;
+    position: relative;
+    text-align: center;
+    overflow: hidden;
+    
+
+}
+
+.login-div,
+.register-div{
+    background-color: white;
+    width: 45%;
+    height: 100%;
+    border-radius: 0 10px 10px 0;
+    text-align: center;
+    z-index: 1;
+    overflow: hidden;
+    position: relative;
+   
+}
+
+form{
+    margin-top: 50px;
+    z-index: 2;
+    
+    
+}
+
+.logo{
+    width: 150px;
+    height: 150px;  
+    position: absolute;
+    left: 20px;
+    top: -30px;
+    z-index: 1;
+}
+
+.login-div .forgot,
+.login-div .reg{
+    color: blue;
+    text-decoration: underline;
+}
+
+.register-div .log{
+    color: blue;
+    text-decoration: underline;
+}
+ 
+.login-div p,
+.register-div p{
+    color: gray;
+    font-size: 13px;
+}
+
+.login-div input,
+.register-div input,
+.register-div select
+{
+    width: 350px;
+    height: 50px;
+    border: none;          
+    border-bottom: 1px solid black; 
+    outline: none;         
+    padding-left: 10px;    
+    background-color: transparent;
+}
+
+.login-div input:focus{
+    border-bottom: 2px solid lightskyblue;
+}
+
+.register-div input:focus{
+    border-bottom: 2px solid lightskyblue;
+}
+
+input::placeholder{
+  left: 5px;
+}
+
+
+
+input[type="submit"]{
+    width: 350px;
+    height: 50px;
+    outline: none;        
+    padding: 5px;   
+    border-radius: 25px; 
+    background-color:rgb(55, 138, 234);
+    border: none;
+    border: 0;
+    font-weight: bold;
+}
+
+.login-button:hover,
+.register-button:hover{
+    color: white;
+    background-color:rgb(17, 59, 108);
+    transition: .5s;
+}  
+
+.login-div h1,
+.register-div h1{
+    color: blue;
+}
+
+
+/*left-div*/
+.money{
+    margin-top: -200px;
+    height: 400px;
+    z-index: 1;
+    margin-left: 150px;
+   
+}
+
+.money-description{
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 80px;
+    background-color: transparent;
+    position: absolute;
+    bottom: 65px;
+    z-index: 2;
+    width: 500px;
+    margin-left: 150px;
+}
+
+.money-description span{
+    color: blue;
+}
+
+.login-container .left-down{
+    float: left;
+    margin-left: 50px;
+    margin-top: 280px;
+}
+
+.login-container .right-down{
+    float: right;
+    margin-right: 50px;
+    margin-top: 280px;
+}
+
+.register-container .left-down{
+    float: left;
+    margin-left: 50px;
+    margin-top: 109px;
+}
+
+.register-container .right-down{
+    float: right;
+    margin-right: 50px;
+    margin-top: 109px;
+}
+
+
+
+
+
+
+.image-container .overlay{
+    width: 1000px;
+    height: 1000px;
+    border-radius: 50%;
+    opacity: 0.3;
+    background: linear-gradient(rgb(55, 159, 223),white,rgb(55, 159, 223),white);
+    position: absolute;
+    left: -420px;
+    top: -420px;
+    z-index: 0;
+    
+
+}
+
+.login-div .overlay,
+.register-div .overlay{
+    width: 1000px;
+    height: 1000px;
+    border-radius: 50%;
+    opacity: 0.3;
+    background: linear-gradient(rgb(55, 159, 223),white,rgb(55, 159, 223),white);
+    position: absolute;
+    left: 150px;
+    top: 300px;
+    z-index: -100;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*error message*/
+.register-div form .error-msg{
+    margin:10px 0;
+    display: block;
+    background: crimson;
+    color:#fff;
+    font-size: 15px;
+    padding:8px;
+    position:absolute;
+    top: 575px;
+    left: 983px;
+ }
+
+.login-div form .error-msg{
+    margin:10px 0;
+    display: block;
+    background: crimson;
+    color:#fff;
+    font-size: 15px;
+    padding:8px;
+    position:absolute;
+    top: 450px;
+    left: 978px;
+
+    
+}
