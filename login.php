@@ -68,7 +68,7 @@ if(isset($_POST['submit'])){
                     <br>
 
                     <h1>WELCOME</h1>
-                    <p>Login your account</p>
+                    <p>Renan your account</p>
                     <br>
                     <?php
                         if(isset($error)){
