@@ -1,3 +1,7 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Lexend+Giga:wght@100..900&display=swap');
+
+
 *{
     margin: 0;
     padding: 0;
@@ -58,6 +62,7 @@ body{
 form{
     margin-top: 50px;
     z-index: 2;
+    position: relative;
     
     
 }
@@ -97,8 +102,9 @@ form{
     border: none;          
     border-bottom: 1px solid black; 
     outline: none;         
-    padding-left: 10px;    
+    padding-left: 30px;    
     background-color: transparent;
+    position: relative;
 }
 
 .login-div input:focus{
@@ -121,10 +127,12 @@ input[type="submit"]{
     outline: none;        
     padding: 5px;   
     border-radius: 25px; 
-    background-color:rgb(55, 138, 234);
+    background-color:rgb(81, 127, 243);
+    
     border: none;
     border: 0;
     font-weight: bold;
+    letter-spacing: 2px;
 }
 
 .login-button:hover,
@@ -137,27 +145,29 @@ input[type="submit"]{
 .login-div h1,
 .register-div h1{
     color: blue;
+    font-family: "Lexend Giga", serif;
 }
 
 
 /*left-div*/
 .money{
     margin-top: -200px;
-    height: 400px;
+    height: 350px;
     z-index: 1;
     margin-left: 150px;
    
 }
 
 .money-description{
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 80px;
+    font-family: "Lexend Giga", serif;
+    font-size: 70px;
     background-color: transparent;
     position: absolute;
     bottom: 65px;
     z-index: 2;
-    width: 500px;
+    width: 750px;
     margin-left: 150px;
+
 }
 
 .money-description span{
@@ -203,9 +213,8 @@ input[type="submit"]{
     left: -420px;
     top: -420px;
     z-index: 0;
-    
-
 }
+
 
 .login-div .overlay,
 .register-div .overlay{
@@ -231,7 +240,14 @@ input[type="submit"]{
 
 
 
-
+.icons{
+    width:20px;
+    height:20px;
+    position: absolute;
+    margin-top: 13px;
+  
+   
+}
 
 
 
@@ -249,28 +265,33 @@ input[type="submit"]{
 
 
 /*error message*/
-.register-div form .error-msg{
-    margin:10px 0;
-    display: block;
-    background: crimson;
-    color:#fff;
-    font-size: 15px;
-    padding:8px;
-    position:absolute;
-    top: 575px;
-    left: 983px;
- }
 
-.login-div form .error-msg{
-    margin:10px 0;
+.login-div form .error-msg
+{
+    margin-top: 280px;
+    margin-left: 185px;
+    position:absolute;
     display: block;
     background: crimson;
-    color:#fff;
+    color: #fff;
     font-size: 15px;
-    padding:8px;
+    padding: 8px;
+    text-align: center;
+    width: 250px;
+    border-radius: 30px;
+}
+.register-div form .error-msg{
+    margin-top: 450px;
+    margin-left: 185px;
     position:absolute;
-    top: 450px;
-    left: 978px;
+    display: block;
+    background: crimson;
+    color: #fff;
+    font-size: 15px;
+    padding: 8px;
+    text-align: center;
+    width: 250px;
+    border-radius: 30px;
+}
 
     
-}
