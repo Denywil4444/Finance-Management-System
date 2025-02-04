@@ -1,0 +1,299 @@
+<?php
+session_start();
+include('../includes/db.php');
+
+// Ensure only admin can access this page
+if ($_SESSION['role'] !== 'admin') {
+    header('Location: ../login.php');
+    exit();
+}
+
+// Logout functionality
+if (isset($_GET['logout'])) {
+    session_unset(); // Remove all session variables
+    session_destroy(); // Destroy the session
+    header('Location: ../login.php'); // Redirect to login page
+    exit();
+}
+
+// Fetch the logged-in admin's username and fund_type
+$stmt = $pdo->prepare("SELECT username, fund_type FROM admins WHERE id = ?");
+$stmt->execute([$_SESSION['user_id']]);
+$admin = $stmt->fetch();
+
+if (!$admin) {
+    echo "Admin not found!";
+    exit();
+}
+
+// Extract username and fund_type
+$admin_username = $admin['username'];
+$admin_fund_type = $admin['fund_type'];
+
+if (isset($_GET['user_id'])) {
+    $user_id = $_GET['user_id'];
+
+    // Fetch the user's username and form data filtered by the admin's fund_type
+    $stmt = $pdo->prepare("SELECT u.username, uf.* 
+                           FROM user_funds uf 
+                           JOIN users u ON uf.user_id = u.id 
+                           WHERE uf.user_id = ? AND uf.fund_type = ?");
+    $stmt->execute([$user_id, $admin_fund_type]);
+    $forms = $stmt->fetchAll(); // Fetch all forms for the user with matching fund_type
+
+    // If no forms exist for the user with the same fund_type, redirect to the 'No Submitted Form' message
+    if (empty($forms)) {
+        header("Location: no_submitted_form.php?user_id=$user_id");
+        exit();
+    }
+}
+
+// Fetch all UACS codes
+$uacs_stmt = $pdo->prepare("SELECT * FROM uacs_codes");
+$uacs_stmt->execute();
+$uacs_codes = $uacs_stmt->fetchAll();
+
+// Handle form submission to update data
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_form'])) {
+    // Collect the updated form data
+    $payee = $_POST['payee'];
+    $office = $_POST['office'];
+    $address = $_POST['address'];
+    $responsibility_center = $_POST['responsibility_center'];
+    $particulars = $_POST['particulars'];
+    $uacs_code = $_POST['uacs_code'];
+    $amount = $_POST['amount'];
+    $fund_type = $_POST['fund_type'];
+    $form_id = $_POST['id']; // Use the 'id' as the unique identifier
+
+    // Update the user's form in the database
+    try {
+        $stmt = $pdo->prepare("UPDATE user_funds 
+                               SET payee = ?, office = ?, address = ?, responsibility_center = ?, particulars = ?, uacs_code = ?, amount = ?, fund_type = ?
+                               WHERE id = ?");
+        $stmt->execute([$payee, $office, $address, $responsibility_center, $particulars, $uacs_code, $amount, $fund_type, $form_id]);
+
+        // Check if any rows were updated
+        if ($stmt->rowCount() > 0) {
+            $_SESSION['success_message'] = "Form updated successfully!";
+        } else {
+            $_SESSION['success_message'] = "No changes were made to the form.";
+        }
+
+        // Redirect to avoid form resubmission
+        header("Location: edit.php?user_id=$user_id");
+        exit();
+    } catch (Exception $e) {
+        // Error handling for the update query
+        echo "Error: " . $e->getMessage(); // Display any errors in the query execution
+    }
+}
+
+// Handle form deletion
+if (isset($_GET['delete_id'])) {
+    $delete_id = $_GET['delete_id'];
+
+    // Delete the selected form from the database
+    $stmt = $pdo->prepare("DELETE FROM user_funds WHERE id = ?");
+    $stmt->execute([$delete_id]);
+
+    // Set success message for deletion
+    $_SESSION['success_message'] = "Form deleted successfully!";
+    
+    // Redirect to avoid form resubmission
+    header("Location: edit.php?user_id=$user_id");
+    exit();
+}
+
+// Fetch all payees
+$payee_stmt = $pdo->prepare("SELECT DISTINCT payee FROM user_funds WHERE user_id = ?");
+$payee_stmt->execute([$user_id]);
+$payees = $payee_stmt->fetchAll();
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../assets/css/editsss.css">
+    <link rel="stylesheet" href="../assets/css/sidebar_men.css">
+    <link rel="stylesheet" href="../assets/css/payees_list.css">
+    <link rel="stylesheet" href="../assets/css/headers.css">
+    <title>Edit Form Offices</title>
+</head>
+<body>
+    <!-- Include Sidebar -->
+    <?php include('sidebar.php'); ?>
+
+    <!-- Main Content Area -->
+    <div class="content">
+        <!-- Include Header -->
+        <?php include('header.php'); ?>
+
+        <div class="content-wrapper">
+            <div class="container">
+                <button class="back-btn" onclick="window.location.href='submit_form.php'">Back</button>
+                <button class="forms-btn" onclick="window.location.href='Form.php'">Forms</button>
+
+                <h1>Edit Form for '<?php echo isset($forms[0]) ? htmlspecialchars($forms[0]['username']) : ''; ?>'</h1>
+
+                <!-- Success Message -->
+                <?php if (isset($_SESSION['success_message'])): ?>
+                    <div id="success-message" class="success-message">
+                        <?php 
+                            echo $_SESSION['success_message']; 
+                            unset($_SESSION['success_message']); // Remove message after displaying
+                        ?>
+                    </div>
+                <?php endif; ?>
+
+                <!-- Only show form if user_id and form data exist -->
+                <?php if (isset($forms) && count($forms) > 0): ?>
+                    <?php foreach ($forms as $form): ?>
+                        <div class="form-container" id="payee-<?php echo htmlspecialchars($form['payee']); ?>">
+                            <!-- Inside the form tag -->
+                            <form method="POST" action="">
+                                <input type="hidden" name="id" value="<?php echo $form['id']; ?>"> <!-- This is the ID of the form in user_funds -->
+
+                                <div class="form-wrapper">
+                                    <!-- Left Column -->
+                                    <div class="form-column">
+                                        <div class="form-group">
+                                            <label for="fund_type">Fund Type:</label>
+                                            <input type="text" name="fund_type" value="<?php echo htmlspecialchars($form['fund_type']); ?>" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="payee">Payee:</label>
+                                            <input type="text" name="payee" value="<?php echo htmlspecialchars($form['payee']); ?>" required>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="office">Office:</label>
+                                            <input type="text" name="office" value="<?php echo htmlspecialchars($form['office']); ?>" required>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="address">Address:</label>
+                                            <input type="text" name="address" value="<?php echo htmlspecialchars($form['address']); ?>" required>
+                                        </div>
+                                    </div>
+
+                                    <!-- Right Column -->
+                                    <div class="form-column">
+                                        <div class="form-group">
+                                            <label for="responsibility_center">Responsibility Center:</label>
+                                            <input type="text" name="responsibility_center" value="<?php echo htmlspecialchars($form['responsibility_center']); ?>" required>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="particulars">Particulars:</label>
+                                            <input type="text" name="particulars" value="<?php echo htmlspecialchars($form['particulars']); ?>" required>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="uacs_code">UACS Code:</label>
+                                            <select name="uacs_code" required>
+                                                <?php foreach ($uacs_codes as $code): ?>
+                                                    <option value="<?php echo $code['code']; ?>" <?php echo $code['code'] === $form['uacs_code'] ? 'selected' : ''; ?>>
+                                                        <?php echo htmlspecialchars($code['code']); ?>
+                                                    </option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="amount">Amount:</label>
+                                            <input type="number" name="amount" value="<?php echo htmlspecialchars($form['amount']); ?>" required>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-actions">
+                                    <input type="submit" name="update_form" value="Update">
+                                    <a href="delete_form.php?form_id=<?php echo $form['id']; ?>" class="delete-btn" onclick="return confirm('Are you sure you want to delete this form?')">Delete</a>
+                                </div>
+                            </form>
+
+                        </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div class="form-container">
+                        <p class="no-form-message">No form has been submitted by this office yet.</p>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <?php include('list/payee_list.php'); ?>
+            
+        </div>
+    </div>
+
+    <script>
+        // Dropdown functionality for user settings
+        document.querySelector('.dropdown-btn').addEventListener('click', function (event) {
+            const dropdown = document.querySelector('.dropdown');
+            event.stopPropagation();
+            dropdown.classList.toggle('show');
+        });
+
+        window.onclick = function (event) {
+            const dropdown = document.querySelector('.dropdown');
+            if (!event.target.matches('.dropdown-btn') && !event.target.closest('.dropdown')) {
+                dropdown.classList.remove('show');
+            }
+        };
+
+
+        document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll(".payee-item").forEach(item => {
+                item.addEventListener("click", function () {
+                    const payeeName = this.getAttribute("data-payee").trim().toLowerCase();
+                    const formContainers = document.querySelectorAll(".form-container");
+
+                    let targetForm = null;
+
+                    formContainers.forEach(form => {
+                        const formPayeeInput = form.querySelector("input[name='payee']");
+                        if (formPayeeInput && formPayeeInput.value.trim().toLowerCase() === payeeName) {
+                            targetForm = form;
+                        }
+                    });
+
+                    if (targetForm) {
+                        const offset = 100; // Adjust this value as needed
+                        const targetPosition = targetForm.getBoundingClientRect().top + window.scrollY - offset;
+
+                        window.scrollTo({ top: targetPosition, behavior: "smooth" });
+
+                        targetForm.classList.add("highlight");
+
+                        // Remove highlight after seconds
+                        setTimeout(() => {
+                            targetForm.classList.remove("highlight");
+                        }, 1000);
+                    }
+                });
+            });
+        });
+
+
+
+
+        // Hide success message after 2 seconds
+        document.addEventListener("DOMContentLoaded", function () {
+            const successMessage = document.getElementById("success-message");
+            if (successMessage) {
+                successMessage.style.display = "block"; // Show message
+                setTimeout(() => {
+                    successMessage.style.opacity = "0";
+                    setTimeout(() => {
+                        successMessage.style.display = "none";
+                    }, 500); // Give time for fade out
+                }, 2000);
+            }
+        });
+    </script>
+
+</body>
+</html>

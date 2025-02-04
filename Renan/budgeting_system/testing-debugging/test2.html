@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budget Utilization Request and Status</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        }
+        .container {
+            width: 100%;
+            max-width: 800px;
+            margin: auto;
+            border: 1px solid #000;
+            padding: 10px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between; /* Space out title and fields */
+            align-items: center; /* Vertically align title and fields */
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            font-size: 18px;
+            margin: 5px 0;
+        }
+        .header p {
+            margin: 2px 0;
+        }
+        .section {
+            margin-bottom: 0; /* Removed margin to remove any gap between sections */
+            padding-bottom: 0; /* Removed padding for alignment */
+        }
+        .section table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 0; /* Removed margin to make sure tables align perfectly */
+        }
+        .section table, .section th, .section td {
+            border: 1px solid #000;
+        }
+        .section th, .section td {
+            padding: 5px;
+            text-align: left;
+        }
+        .certification {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .certification .cert-box {
+            width: 48%;
+            border: 1px solid #000;
+            padding: 10px;
+        }
+        .cert-box p {
+            margin: 5px 0;
+        }
+        .footer {
+            margin-top: 20px;
+        }
+
+        /* Ensure no space between Section 1 and Section 2 */
+        .section1, .section2 {
+            margin-bottom: 0; /* Ensure sections are not separated */
+            padding-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <!-- Title and fields placed beside each other -->
+            <div>
+                <h1>BUDGET UTILIZATION REQUEST AND STATUS</h1>
+                <p><strong>NORTHERN ILOILO STATE UNIVERSITY</strong></p>
+                <p>Estancia, Iloilo</p>
+            </div>
+            <!-- Fields placed beside the title -->
+            <div>
+                <p><strong>No.:</strong> 02-207512-2025-01-00002</p>
+                <p><strong>Date:</strong> January 22, 2025</p>
+                <p><strong>Fund:</strong> 06 - Business Related Funds</p>
+            </div>
+        </div>
+
+        <!-- Section 1: Basic Info -->
+        <div class="section section1">
+            <table>
+                <tr>
+                    <th>Payee</th>
+                    <td>NISU ACCT. #4152-1001-20</td>
+                    
+                </tr>
+                <tr>
+                    <th>Office</th>
+                    <td></td>
+                    
+                </tr>
+                <tr>
+                    <th>Address</th>
+                    <td>Estancia, Iloilo</td>
+                    
+                </tr>
+            </table>
+        </div>
+
+        <!-- Section 2: Particulars -->
+        <div class="section section2">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Responsibility Center</th>
+                        <th>Particulars</th>
+                        <th>MFO/PAP</th>
+                        <th>UACS Code</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>08 - 064 - 0000000 - 066<br>Resource Generation Services</td>
+                        <td>To fund transfer from Business Related Fund to Trust Receipts the reimbursement for meal expenses during the Bidding Conference of BAC last October 23, 2024 as per attached supporting documents</td>
+                        <td>GAS</td>
+                        <td>50299030 00</td>
+                        <td>1,440.00</td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th colspan="4" style="text-align: right;">Total:</th>
+                        <th>1,440.00</th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <!-- Section 3: Certification -->
+        <div class="certification">
+            <div class="cert-box">
+                <p><strong>A. Certified:</strong></p>
+                <p>Charges to budget necessary, lawful and under my direct supervision; and supporting documents valid, proper and legal</p>
+                <p>Signature:</p>
+                <p>Printed Name: <strong>ODESSA ROSE D. GASAPO</strong></p>
+                <p>Position: Director - Resource Generation Head, Budget Unit/Authorized Representative</p>
+                <p>Date: January 22, 2025</p>
+            </div>
+            <div class="cert-box">
+                <p><strong>B. Certified:</strong></p>
+                <p>Budget available and utilized for the purpose/adjustment necessary as indicated above</p>
+                <p>Signature:</p>
+                <p>Printed Name: <strong>KATHLEEN R. BUACE, CPA, MBA</strong></p>
+                <p>Position: Acting Budget Officer III Head, Budget Unit/Authorized Representative</p>
+                <p>Date: January 22, 2025</p>
+            </div>
+        </div>
+
+        <!-- Section 4: Status of Utilization -->
+        <div class="footer">
+            <h3>STATUS OF UTILIZATION</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Particulars</th>
+                        <th>ORS No.</th>
+                        <th>Utilization (a)</th>
+                        <th>Payable (b)</th>
+                        <th>Payment</th>
+                        <th>Not Yet Due (a-b)</th>
+                        <th>Due and Demandable (c-b)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>22-Jan-25</td>
+                        <td>Utilization</td>
+                        <td>02-207512-2025-01-00002</td>
+                        <td>1,440.00</td>
+                        <td></td>
+                        <td></td>
+                        <td>1,440.00</td>
+                        <td>-</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

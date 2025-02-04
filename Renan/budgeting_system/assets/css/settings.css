@@ -1,0 +1,177 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+}
+
+
+
+/* Main content */
+.content {
+    margin-left: 250px;
+    padding: 20px;
+    width: calc(100% - 250px);
+}
+
+header {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    text-align: center;
+    position: fixed;
+    top: 0;
+    left: 250px; /* Ensures it's aligned to the left */
+    right: 0;
+}
+
+h1 {
+    margin: 0;
+}
+
+h2 {
+    text-align: center;
+    margin-top: 50px;
+}
+
+/* Dropdown container */
+.dropdown {
+    position: absolute;
+    top: 10px;
+    right: 10px; /* Adjusted the position */
+    z-index: 100;
+}
+
+/* Button to trigger dropdown */
+.dropdown-btn {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    border: none;
+    border-radius: 4px;
+}
+
+/* Dropdown menu */
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #f9f9f9;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+    z-index: 1;
+    margin-top: 10px;
+    right: 5px;
+    font-size: 13px;
+}
+
+.dropdown-content a {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+}
+
+.dropdown-content a:hover {
+    background-color: #ddd;
+}
+
+/* Show dropdown when toggled */
+.dropdown.show .dropdown-content {
+    display: block;
+}
+
+/* Form container styling */
+.form-container {
+    margin-top: 30px;
+}
+
+/* Input and button styling */
+input[type="text"] {
+    padding: 10px;
+    width: 60%;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+button {
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+/* Link to go back */
+.back-link {
+    display: block;
+    margin-top: 20px;
+    text-align: center;
+    text-decoration: none;
+    color: #4CAF50;
+    font-size: 16px;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+.uacs-dropdown select {
+    padding: 10px;
+    width: 60%;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    margin: 10px 0;
+}
+
+.uacs-small {
+    font-size: 12px;
+}
+
+button {
+    padding: 8px 15px;
+}
+
+
+/* Message display */
+.success, .error {
+    position: fixed; /* Fix the position of the messages */
+    top: 20px; /* Adjust the top position */
+    left: 59%; /* Center the messages horizontally */
+    transform: translateX(-50%); /* Center the messages properly */
+    width: 30%; /* Adjust the width of the message container */
+    max-width: 600px; /* Optional: Limit the maximum width */
+    text-align: center;
+    font-size: 16px;
+    font-weight: bold;
+    padding: 10px;
+    z-index: 1000; /* Make sure it's above other content */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Add some shadow for visibility */
+    border-radius: 4px; /* Rounded corners */
+}
+
+/* Specific colors for messages */
+.success {
+    color: green;
+    background-color:rgb(30, 180, 210);
+}
+
+.error {
+    color: red;
+    background-color: #f8d7da;
+}
+
+/* Smooth fade-out */
+.message {
+    transition: opacity 0.5s ease, top 0.5s ease; /* Add transition to fade and slide */
+}

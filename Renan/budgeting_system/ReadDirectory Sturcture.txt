@@ -1,0 +1,43 @@
+
+account:
+admin: admin
+admin123
+finance code: admin123
+
+user: cics
+cics12345
+
+office name: Information Technology
+
+
+
+
+budgeting-system/
+│
+├── index.php         # Main landing page
+├── login.php         # Login form
+├── register.php      # Registration form
+├── admin/
+│   ├── dashboard.php # Admin dashboard
+│   ├── manage-users.php
+│   ├── transactions.php
+│   └── settings.php  # Manage security questions
+├── user/
+│   ├── dashboard.php # User dashboard
+│   ├── submit-form.php
+│   ├── view-forms.php
+│   └── print-form.php
+├── includes/
+│   ├── db.php        # Database connection
+│   ├── header.php    # Common header
+│   └── footer.php    # Common footer
+└── assets/
+    ├── css/
+    ├── js/
+    └── images/
+
+
+
+
+
+Now once the user logged in from the log.php in the user/submit-form.php create a choices like Business Related Funds or Internally Generated Fund and once they chooses what they want make a table or form for both choices and for Business create a table, first put their office name

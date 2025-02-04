@@ -1,0 +1,2117 @@
+<?php
+session_start();
+include('../includes/db.php');
+
+// Ensure only admin can access this page
+if ($_SESSION['role'] !== 'admin') {
+    header('Location: ../login.php');
+    exit();
+}
+
+// Logout functionality
+if (isset($_GET['logout'])) {
+    session_unset(); // Remove all session variables
+    session_destroy(); // Destroy the session
+    header('Location: ../login.php'); // Redirect to login page
+    exit();
+}
+
+if (isset($_GET['user_id'])) {
+    $user_id = $_GET['user_id'];
+
+    // Fetch the user's username and form data
+    $stmt = $pdo->prepare("SELECT u.username, uf.* 
+                           FROM user_funds uf 
+                           JOIN users u ON uf.user_id = u.id 
+                           WHERE uf.user_id = ?");
+    $stmt->execute([$user_id]);
+    $forms = $stmt->fetchAll(); // Fetch all forms for the user
+
+    // If no forms exist for the user, redirect to the 'No Submitted Form' message
+    if (empty($forms)) {
+        header("Location: no_submitted_form.php?user_id=$user_id");
+        exit();
+    }
+}
+
+// Fetch all UACS codes
+$uacs_stmt = $pdo->prepare("SELECT * FROM uacs_codes");
+$uacs_stmt->execute();
+$uacs_codes = $uacs_stmt->fetchAll();
+
+$stmt = $pdo->prepare("SELECT username FROM admins WHERE id = ?");
+$stmt->execute([$_SESSION['user_id']]);
+$admin = $stmt->fetch();
+
+// Handle form submission to update data
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_form'])) {
+    // Debug: Check if form data is being received
+    echo "<pre>";
+    print_r($_POST); // Check POST data
+    echo "</pre>";
+
+    // Collect the updated form data
+    $payee = $_POST['payee'];
+    $office = $_POST['office'];
+    $address = $_POST['address'];
+    $responsibility_center = $_POST['responsibility_center'];
+    $particulars = $_POST['particulars'];
+    $uacs_code = $_POST['uacs_code'];
+    $amount = $_POST['amount'];
+    $fund_type = $_POST['fund_type'];
+    $form_id = $_POST['id']; // Use the 'id' as the unique identifier
+    
+
+    // Debug: Print the form data that will be sent to the query
+    echo "Form Data: <br>";
+    echo "Payee: $payee <br>";
+    echo "Office: $office <br>";
+    echo "Address: $address <br>";
+    echo "Responsibility Center: $responsibility_center <br>";
+    echo "Particulars: $particulars <br>";
+    echo "UACS Code: $uacs_code <br>";
+    echo "Amount: $amount <br>";
+    echo "Fund Type: $fund_type <br>";
+    echo "Form ID: $form_id <br>";
+
+    // Update the user's form in the database
+    try {
+        $stmt = $pdo->prepare("UPDATE user_funds 
+                               SET payee = ?, office = ?, address = ?, responsibility_center = ?, particulars = ?, uacs_code = ?, amount = ?, fund_type = ?
+                               WHERE id = ?");
+        $stmt->execute([$payee, $office, $address, $responsibility_center, $particulars, $uacs_code, $amount, $fund_type, $form_id]);
+
+        // Check if any rows were updated
+        if ($stmt->rowCount() > 0) {
+            echo "Form updated successfully!";
+        } else {
+            echo "No changes were made to the form.";
+        }
+
+        // Set success message in session
+        $_SESSION['success_message'] = "Form updated successfully!";
+        
+        // Redirect to avoid form resubmission
+        header("Location: edit.php?user_id=$user_id");
+        exit();
+    } catch (Exception $e) {
+        // Error handling for the update query
+        echo "Error: " . $e->getMessage(); // Display any errors in the query execution
+    }
+}
+
+// Handle form deletion
+if (isset($_GET['delete_id'])) {
+    $delete_id = $_GET['delete_id'];
+
+    // Delete the selected form from the database
+    $stmt = $pdo->prepare("DELETE FROM user_funds WHERE id = ?");
+    $stmt->execute([$delete_id]);
+
+    // Set success message for deletion
+    $_SESSION['success_message'] = "Form deleted successfully!";
+    
+    // Redirect to avoid form resubmission
+    header("Location: edit.php?user_id=$user_id");
+    exit();
+}
+
+
+///////////// payee for payee list
+// Fetch all payees
+$payee_stmt = $pdo->prepare("SELECT DISTINCT payee FROM user_funds WHERE user_id = ?");
+$payee_stmt->execute([$user_id]);
+$payees = $payee_stmt->fetchAll();
+///////////// payee for payee list
+// Fetch all payees
+
+
+
+
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../assets/css/editsss.css">
+    <link rel="stylesheet" href="../assets/css/sidebar_men.css">
+    <link rel="stylesheet" href="../assets/css/payee_list.css">
+    <link rel="stylesheet" href="../assets/css/header.css">
+
+    <title>Edit Form Offices</title>
+</head>
+<body>
+    <!-- Include Sidebar -->
+    <?php include('sidebar.php'); ?>
+
+    <!-- Main Content Area -->
+    <div class="content">
+        <!-- Include Header -->
+        <?php include('header.php'); ?>
+
+        <div class="content-wrapper">
+            <div class="container">
+                <button class="back-btn" onclick="window.location.href='submit_form.php'">Back</button>
+                <button class="forms-btn" onclick="window.location.href='Form.php'">Forms</button>
+
+                <h1>Edit Form for '<?php echo isset($forms[0]) ? htmlspecialchars($forms[0]['username']) : ''; ?>'</h1>
+
+                <!-- Success Message -->
+                <?php if (isset($_SESSION['success_message'])): ?>
+                    <div id="success-message" class="success-message">
+                        <?php 
+                            echo $_SESSION['success_message']; 
+                            unset($_SESSION['success_message']); // Remove message after displaying
+                        ?>
+                    </div>
+                <?php endif; ?>
+
+                <!-- Only show form if user_id and form data exist -->
+                <?php if (isset($forms) && count($forms) > 0): ?>
+                    <?php foreach ($forms as $form): ?>
+                        <div class="form-container" id="payee-<?php echo htmlspecialchars($form['payee']); ?>">
+                            <!-- Inside the form tag -->
+                            <form method="POST" action="">
+                                <input type="hidden" name="id" value="<?php echo $form['id']; ?>"> <!-- This is the ID of the form in user_funds -->
+
+                                <div class="form-wrapper">
+                                    <!-- Left Column -->
+                                    <div class="form-column">
+                                        <div class="form-group">
+                                            <label for="fund_type">Fund Type:</label>
+                                            <input type="text" name="fund_type" value="<?php echo htmlspecialchars($form['fund_type']); ?>" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="payee">Payee:</label>
+                                            <input type="text" name="payee" value="<?php echo htmlspecialchars($form['payee']); ?>" required>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="office">Office:</label>
+                                            <input type="text" name="office" value="<?php echo htmlspecialchars($form['office']); ?>" required>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="address">Address:</label>
+                                            <input type="text" name="address" value="<?php echo htmlspecialchars($form['address']); ?>" required>
+                                        </div>
+                                    </div>
+
+                                    <!-- Right Column -->
+                                    <div class="form-column">
+                                        <div class="form-group">
+                                            <label for="responsibility_center">Responsibility Center:</label>
+                                            <input type="text" name="responsibility_center" value="<?php echo htmlspecialchars($form['responsibility_center']); ?>" required>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="particulars">Particulars:</label>
+                                            <input type="text" name="particulars" value="<?php echo htmlspecialchars($form['particulars']); ?>" required>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="uacs_code">UACS Code:</label>
+                                            <select name="uacs_code" required>
+                                                <?php foreach ($uacs_codes as $code): ?>
+                                                    <option value="<?php echo $code['code']; ?>" <?php echo $code['code'] === $form['uacs_code'] ? 'selected' : ''; ?>>
+                                                        <?php echo htmlspecialchars($code['code']); ?>
+                                                    </option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="amount">Amount:</label>
+                                            <input type="number" name="amount" value="<?php echo htmlspecialchars($form['amount']); ?>" required>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-actions">
+                                    <input type="submit" name="update_form" value="Update">
+                                    <a href="delete_form.php?form_id=<?php echo $form['id']; ?>" class="delete-btn" onclick="return confirm('Are you sure you want to delete this form?')">Delete</a>
+                                </div>
+                            </form>
+
+                        </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div class="form-container">
+                        <p class="no-form-message">No form has been submitted by this office yet.</p>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <?php include('list/payee_list.php'); ?>
+            
+        </div>
+    </div>
+
+    <script>
+        // Dropdown functionality for user settings
+        document.querySelector('.dropdown-btn').addEventListener('click', function (event) {
+            const dropdown = document.querySelector('.dropdown');
+            event.stopPropagation();
+            dropdown.classList.toggle('show');
+        });
+
+        window.onclick = function (event) {
+            const dropdown = document.querySelector('.dropdown');
+            if (!event.target.matches('.dropdown-btn') && !event.target.closest('.dropdown')) {
+                dropdown.classList.remove('show');
+            }
+        };
+
+
+        document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll(".payee-item").forEach(item => {
+                item.addEventListener("click", function () {
+                    const payeeName = this.getAttribute("data-payee").trim().toLowerCase();
+                    const formContainers = document.querySelectorAll(".form-container");
+
+                    let targetForm = null;
+
+                    formContainers.forEach(form => {
+                        const formPayeeInput = form.querySelector("input[name='payee']");
+                        if (formPayeeInput && formPayeeInput.value.trim().toLowerCase() === payeeName) {
+                            targetForm = form;
+                        }
+                    });
+
+                    if (targetForm) {
+                        const offset = 100; // Adjust this value as needed
+                        const targetPosition = targetForm.getBoundingClientRect().top + window.scrollY - offset;
+
+                        window.scrollTo({ top: targetPosition, behavior: "smooth" });
+
+                        targetForm.classList.add("highlight");
+
+                        // Remove highlight after seconds
+                        setTimeout(() => {
+                            targetForm.classList.remove("highlight");
+                        }, 1000);
+                    }
+                });
+            });
+        });
+
+
+
+
+        // Hide success message after 2 seconds
+        document.addEventListener("DOMContentLoaded", function () {
+            const successMessage = document.getElementById("success-message");
+            if (successMessage) {
+                successMessage.style.display = "block"; // Show message
+                setTimeout(() => {
+                    successMessage.style.opacity = "0";
+                    setTimeout(() => {
+                        successMessage.style.display = "none";
+                    }, 500); // Give time for fade out
+                }, 2000);
+            }
+        });
+
+    </script>
+
+</body>
+</html>
+
+/////// edit.php above
+
+
+
+
+
+
+
+
+
+
+<?php
+session_start();
+include('../includes/db.php');
+
+// Ensure only admin can access this page
+if ($_SESSION['role'] !== 'admin') {
+    header('Location: ../login.php');
+    exit();
+}
+
+if (isset($_GET['user_id'])) {
+    $user_id = $_GET['user_id'];
+
+    // Fetch the user's submitted form
+    $stmt = $pdo->prepare("SELECT * FROM user_funds WHERE user_id = ?");
+    $stmt->execute([$user_id]);
+    $form = $stmt->fetch();
+
+    if (!$form) {
+        die('No form found for this user.');
+    }
+} else {
+    die('User ID is required.');
+}
+
+// Fetch all UACS codes
+$uacs_stmt = $pdo->prepare("SELECT * FROM uacs_codes");
+$uacs_stmt->execute();
+$uacs_codes = $uacs_stmt->fetchAll();
+
+// Handle form submission to update data
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_form'])) {
+    // Collect the updated form data
+    $payee = $_POST['payee'];
+    $office = $_POST['office'];
+    $address = $_POST['address'];
+    $responsibility_center = $_POST['responsibility_center'];
+    $particulars = $_POST['particulars'];
+    $uacs_code = $_POST['uacs_code'];
+    $amount = $_POST['amount'];
+
+    // Update the user's form in the database
+    $stmt = $pdo->prepare("UPDATE user_funds 
+                           SET payee = ?, office = ?, address = ?, responsibility_center = ?, particulars = ?, uacs_code = ?, amount = ? 
+                           WHERE id = ?");
+    $stmt->execute([$payee, $office, $address, $responsibility_center, $particulars, $uacs_code, $amount, $form['id']]);
+
+    // Set success message in session
+    $_SESSION['success_message'] = "Form updated successfully!";
+    
+    // Redirect to avoid form resubmission
+    header("Location: submit_form.php?user_id=$user_id");
+    exit();
+}
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit User Form</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+    <h1>Edit Form for <?php echo htmlspecialchars($form['payee']); ?></h1>
+
+    <!-- Display success message if set -->
+    <?php
+    if (isset($_SESSION['success_message'])) {
+        echo '<div class="success-message">' . $_SESSION['success_message'] . '</div>';
+        unset($_SESSION['success_message']);
+    }
+    ?>
+
+    <form method="POST" action="">
+        <label for="payee">Payee:</label>
+        <input type="text" name="payee" value="<?php echo htmlspecialchars($form['payee']); ?>" required>
+        
+        <label for="office">Office:</label>
+        <input type="text" name="office" value="<?php echo htmlspecialchars($form['office']); ?>" required>
+        
+        <label for="address">Address:</label>
+        <input type="text" name="address" value="<?php echo htmlspecialchars($form['address']); ?>" required>
+        
+        <label for="responsibility_center">Responsibility Center:</label>
+        <input type="text" name="responsibility_center" value="<?php echo htmlspecialchars($form['responsibility_center']); ?>" required>
+        
+        <label for="particulars">Particulars:</label>
+        <input type="text" name="particulars" value="<?php echo htmlspecialchars($form['particulars']); ?>" required>
+        
+        <label for="uacs_code">UACS Code:</label>
+        <select name="uacs_code" required>
+            <?php foreach ($uacs_codes as $code): ?>
+                <option value="<?php echo $code['code']; ?>" <?php echo $code['code'] === $form['uacs_code'] ? 'selected' : ''; ?>>
+                    <?php echo htmlspecialchars($code['code']); ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+        
+        <label for="amount">Amount:</label>
+        <input type="number" name="amount" value="<?php echo htmlspecialchars($form['amount']); ?>" required>
+        
+        <input type="submit" name="update_form" value="Update">
+    </form>
+</body>
+</html>
+
+
+
+
+
+
+
+<?php
+session_start();
+include('../includes/db.php');
+
+if (!isset($_SESSION['user_id'])) {
+    header('Location: ../login.php');
+    exit();
+}
+
+$user_id = $_SESSION['user_id'];
+$role = $_SESSION['role'];
+$office_name = $_SESSION['office_name'] ?? '';
+$fund_type = $_GET['fund_type'];
+
+// Fetch all UACS codes
+$uacs_stmt = $pdo->prepare("SELECT * FROM uacs_codes");
+$uacs_stmt->execute();
+$uacs_codes = $uacs_stmt->fetchAll();
+
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Collect form data
+    $payee = $_POST['payee'];
+    $office = $_POST['office'];
+    $address = $_POST['address'];
+    $responsibility_center = $_POST['responsibility_center'];
+    $particulars = $_POST['particulars'];
+    $uacs_code = $_POST['uacs_code'];
+    $amount = $_POST['amount'];
+
+    // Insert data into user_funds table
+    $stmt = $pdo->prepare("INSERT INTO user_funds (user_id, fund_type, payee, office, address, responsibility_center, particulars, uacs_code, amount)
+                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt->execute([$user_id, $fund_type, $payee, $office, $address, $responsibility_center, $particulars, $uacs_code, $amount]);
+
+    // Update the form_submitted count in users table
+    $update_stmt = $pdo->prepare("UPDATE users SET form_submitted = form_submitted + 1 WHERE id = ?");
+
+    $update_stmt->execute([$user_id]);
+
+    // Set session success message
+    $_SESSION['success_message'] = "Form submitted successfully!";
+    
+    // Redirect to display success message
+    header("Location: fund_form.php?fund_type=$fund_type");
+    exit();
+}
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?php echo ucfirst(str_replace('_', ' ', $fund_type)); ?> Form</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 50%;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        label {
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        input, select {
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+
+        input[type="number"] {
+            -moz-appearance: textfield; /* Removes the spinner in number input */
+        }
+
+        input[type="submit"] {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 12px;
+            font-size: 16px;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .back-btn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: #f44336;
+            color: white;
+            padding: 8px 16px;
+            font-size: 14px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .back-btn:hover {
+            background-color: #d32f2f;
+        }
+
+        .success-message {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <button class="back-btn" onclick="window.location.href = 'dashboard.php';">Back</button>
+
+        <h1><?php echo ucfirst(str_replace('_', ' ', $fund_type)); ?> Form</h1>
+
+        <!-- Display success message if set -->
+        <?php
+        if (isset($_SESSION['success_message'])) {
+            echo '<div class="success-message">' . $_SESSION['success_message'] . '</div>';
+            unset($_SESSION['success_message']);
+        }
+        ?>
+
+        <form method="POST" action="fund_form.php?fund_type=<?php echo $fund_type; ?>">
+            
+            <div class="form-group">
+                <label for="payee">Payee:</label>
+                <input type="text" name="payee" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="office">Office:</label>
+                <input type="text" name="office" value="<?php echo htmlspecialchars($office_name); ?>" required>
+            </div>
+
+            <div class="form-group">
+                <label for="address">Address:</label>
+                <input type="text" name="address" required>
+            </div>
+
+            <div class="form-group">
+                <label for="responsibility_center">Responsibility Center:</label>
+                <input type="text" name="responsibility_center" value="<?php echo htmlspecialchars($office_name); ?>" required>
+            </div>
+
+            <div class="form-group">
+                <label for="particulars">Particulars:</label>
+                <input type="text" name="particulars" required>
+            </div>
+
+            <div class="form-group">
+                <label for="uacs_code">UACS Code:</label>
+                <select name="uacs_code" required>
+                    <?php foreach ($uacs_codes as $code): ?>
+                        <option value="<?php echo $code['code']; ?>"><?php echo htmlspecialchars($code['code']); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="amount">Amount:</label>
+                <input type="number" name="amount" required>
+            </div>
+
+            <input type="submit" value="Submit">
+        </form>
+    </div>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+///////////////////// manage user
+
+
+
+<?php
+session_start();
+include('../includes/db.php');
+
+// Logout functionality
+if (isset($_GET['logout'])) {
+    session_unset(); // Remove all session variables
+    session_destroy(); // Destroy the session
+    header('Location: ../login.php'); // Redirect to login page
+    exit();
+}
+
+// Check if the user is an admin
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+    header('Location: ../login.php');
+    exit();
+}
+
+// Fetch the admin's username
+$admin_id = $_SESSION['user_id'];
+$stmt = $pdo->prepare("SELECT username FROM admins WHERE id = ?");
+$stmt->execute([$admin_id]);
+$admin = $stmt->fetch();
+
+// Fetch all users (offices) along with their usernames, office names, and funds
+$stmt = $pdo->query("SELECT id, username, office_name, funds FROM users");
+$offices = $stmt->fetchAll();
+
+// Add, update, or delete funds based on admin action
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $user_id = $_POST['user_id'];
+    $funds = $_POST['funds'];
+    $action = $_POST['action'];
+
+    if ($action === 'update') {
+        $stmt = $pdo->prepare("UPDATE users SET funds = ? WHERE id = ?");
+        $stmt->execute([$funds, $user_id]);
+        $_SESSION['message'] = "Funds updated successfully.";
+    } elseif ($action === 'delete') {
+        $stmt = $pdo->prepare("UPDATE users SET funds = NULL WHERE id = ?");
+        $stmt->execute([$user_id]);
+        $_SESSION['message'] = "Funds deleted successfully.";
+    }
+
+    // Redirect to the same page to reload the table and display the message
+    header("Location: manage-users.php");
+    exit();
+}
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Users</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background-color: #bbdefb;
+            color: white;
+            padding-top: 20px;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+
+        .sidebar .username {
+            text-align: center;
+            margin-bottom: 30px;
+            color:rgb(0, 0, 0);
+        }
+
+        .sidebar .username p {
+            margin: 0;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .sidebar a {
+            display: block;
+            padding: 15px 20px;
+            text-decoration: none;
+            color: white;
+            margin: 10px 0;
+            background-color: rgb(13, 115, 194);
+            border-radius: 4px;
+        }
+
+        .sidebar a:hover {
+            background-color: #555;
+        }
+
+        .sidebar a.active {
+            background-color:rgb(92, 63, 177);/* Change the color to match your design */
+            font-weight: bold; /* Makes the active link bold */
+        }
+
+
+        /* Main content */
+        .content {
+            margin-left: 250px;
+            padding: 20px;
+            width: calc(100% - 250px);
+        }
+
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            position: fixed;
+            top: 0;
+            left: 250px; /* Ensures it's aligned to the left */
+            right: 0;
+        }
+
+        h1 {
+            margin: 0;
+        }
+
+        /* Dropdown container */
+        .dropdown {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 100;
+        }
+
+        /* Button to trigger dropdown */
+        .dropdown-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+        }
+
+        /* Dropdown menu */
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+            z-index: 1;
+            margin-top: 10px;
+            right: 5px;
+            font-size: 13px;
+        }
+
+        .dropdown-content a {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+
+        .dropdown-content a:hover {
+            background-color: #ddd;
+        }
+
+        /* Show dropdown when toggled */
+        .dropdown.show .dropdown-content {
+            display: block;
+        }
+
+        h2 {
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        table {
+            width: 80%;
+            margin: 20px auto;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f4f4f4;
+        }
+
+        /* Input and button styles */
+        input[type="number"] {
+            padding: 5px;
+            width: 80px;
+        }
+
+        button {
+            padding: 5px 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        /* Success message styles */
+        .message {
+            background-color: rgb(73, 27, 255);
+            color: white;
+            padding: 10px;
+            margin: 10px 0;
+            text-align: center;
+            border-radius: 5px;
+            position: fixed; /* Ensure it's fixed in the viewport */
+            top: 25px; /* Increased value to move it down */
+            left: 59%; /* Center horizontally */
+            transform: translateX(-50%); /* Center the message */
+        }
+
+
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar Menu -->
+    <div class="sidebar">
+        <div class="username">
+            <p><?= htmlspecialchars($admin['username']) ?></p>
+        </div>
+        <a href="dashboard.php">Dashboard</a>
+        <a href="manage-users.php" class="<?= basename($_SERVER['PHP_SELF']) === 'manage-users.php' ? 'active' : '' ?>">Manage Users</a>
+        <a href="submit_form.php">Forms</a>
+        <a href="update_form.php">Update Form</a>
+        <a href="settings.php">Settings</a>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="content">
+        <!-- Header with Admin's Username in the Dropdown -->
+        <?php include('header.php'); ?>
+
+        <!-- Display Success Message -->
+        <?php if (isset($_SESSION['message'])): ?>
+            <div class="message"><?= $_SESSION['message']; ?></div>
+            <?php unset($_SESSION['message']); ?>
+        <?php endif; ?>
+
+        <!-- Title for Office Information -->
+        <h2>Offices Management</h2>
+
+        <!-- Table displaying Office Details -->
+        <table>
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Office Name</th>
+                    <th>Funds</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($offices as $office): ?>
+                    <tr>
+                        <td><?= htmlspecialchars($office['username']) ?></td>
+                        <td><?= htmlspecialchars($office['office_name']) ?></td>
+                        <td><?= htmlspecialchars(number_format($office['funds'] ?? 0, 2)) ?></td>
+                        <td>
+                            <form method="POST" style="display:inline-block;">
+                                <input type="hidden" name="user_id" value="<?= $office['id'] ?>">
+                                <input type="number" name="funds" value="<?= number_format($office['funds'] ?? 0, 2) ?>" required oninput="formatNumberInput(this)" />
+                                <button type="submit" name="action" value="update">Update</button>
+                            </form>
+                            <form method="POST" style="display:inline-block;">
+                                <input type="hidden" name="user_id" value="<?= $office['id'] ?>">
+                                <button type="submit" name="action" value="delete">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Dropdown toggle and close functions
+document.querySelector('.dropdown-btn').addEventListener('click', function (event) {
+    const dropdown = document.querySelector('.dropdown');
+    // Prevent the event from propagating to the window.onclick function
+    event.stopPropagation(); 
+    dropdown.classList.toggle('show');
+});
+
+// Close the dropdown if the user clicks anywhere outside of it
+window.onclick = function (event) {
+    const dropdown = document.querySelector('.dropdown');
+    // Check if the click is outside the dropdown button and its content
+    if (!event.target.matches('.dropdown-btn') && !event.target.closest('.dropdown')) {
+        dropdown.classList.remove('show');
+    }
+}
+
+    </script>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// update form
+
+<?php
+session_start();
+include('../includes/db.php');
+
+// CSRF Token Generation (for POST requests)
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
+// Ensure only admin can access this page
+if ($_SESSION['role'] !== 'admin') {
+    header('Location: ../login.php');
+    exit();
+}
+
+// Fetch all users with the count of forms submitted
+if (!isset($_GET['user_id'])) {
+    $stmt = $pdo->prepare("
+        SELECT u.id, u.username, u.role, COUNT(uf.id) AS forms_submitted 
+        FROM users u 
+        LEFT JOIN user_funds uf ON uf.user_id = u.id 
+        GROUP BY u.id
+    ");
+    $stmt->execute();
+    $users = $stmt->fetchAll();
+}
+
+// Fetch user-specific form data if `user_id` is set
+if (isset($_GET['user_id'])) {
+    $user_id = $_GET['user_id'];
+
+    // Fetch the user's username instead of payee
+    $stmt = $pdo->prepare("SELECT u.username, uf.* 
+                           FROM user_funds uf 
+                           JOIN users u ON uf.user_id = u.id 
+                           WHERE uf.user_id = ?");
+    $stmt->execute([$user_id]);
+    $forms = $stmt->fetchAll(); // Fetch all forms for the user
+
+    // If no forms exist for the user, redirect to the 'No Submitted Form' message
+    if (empty($forms)) {
+        header("Location: no_submitted_form.php?user_id=$user_id");
+        exit();
+    }
+}
+
+if (isset($forms) && !empty($forms)) {
+    // Assuming 'payee' is a field in your user_funds table
+    $payee = htmlspecialchars($forms[0]['payee']); // Or set according to your logic
+}
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Form</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center; /* Align the content at the top */
+            flex-direction: column; /* Stack tables vertically */
+            margin: 0;
+            font-family: Arial, sans-serif;
+            height: auto; /* Allow height to adjust */
+            overflow-y: auto; /* Enable vertical scrolling */
+            margin-top: 5%;
+            margin-bottom: 5%;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            max-width: 800px;
+            table-layout: fixed;
+            margin-bottom: 0px; /* Reduced margin between tables */
+        }
+        tr {
+            display: flex;
+            width: 100%;
+        }
+        td {
+            padding: 20px;
+            border: 1px solid #000;
+            vertical-align: middle;
+            width: 33%; /* Adjust width to have three columns */
+        }
+        .left-column {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            width: 80%;
+        }
+        .left-column img {
+            max-width: 80px;
+            height: auto;
+            margin-right: 20px;
+        }
+        .text-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+        .text-container .title {
+            font-size: 12px; /* Smaller text */
+            font-weight: bold;
+        }
+        .text-container .subtext {
+            font-size: 11.5px; /* Smaller text */
+            font-weight: normal; /* Not bold */
+        }
+        
+        .right-column {
+            display: flex;
+            flex-direction: column;
+            width: 40%; /* The remaining width */
+            padding-left: 1px;
+            align-items: center;
+        }
+
+        .right-column div {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 5px;
+            justify-content: center; /* Center contents */
+            font-size: 10px;
+        }
+        .right-column label {
+            font-weight: bold;
+            text-align: left;
+            flex: 1;
+            padding-right: 10px;
+        }
+        .right-column input, 
+        .right-column span {
+            flex: 2;
+            text-align: center;
+            border: none;
+            outline: none;
+            font-size: 11px;
+            background: transparent;
+            width: 100%;
+        }
+        /* For input elements inside the right column */
+        .right-column input {
+            border-bottom: 1px solid #000;
+            padding: 0.5px; /* Reduce padding to make it smaller */
+        }
+
+        /* For the highlight element */
+        .highlight {
+            background-color:rgb(192, 79, 76); /* Light green background */
+            padding: 1px 2px; /* Even smaller padding */
+            font-size: 5px; /* Smaller font size */
+            font-weight: bold;
+            text-align: center;
+            display: inline-block; /* Makes the background fit the content width */
+            width: auto; /* Makes the width adjust to content, smaller */
+            max-width: 150px; /* Limits the maximum width, can be further reduced */
+            margin-left: 80px; /* Shift the element to the right */
+        }
+
+        .highlight-container {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start; /* Align left */
+            width: 100%;
+            margin-top: 10px; /* Optional: Adds space between the highlight and other elements */
+            margin-left: 10px; /* Adds space to the left to shift it to the right */
+            font-size: 5px; /* Smaller text */
+        }
+
+        .code {
+            margin-bottom: 90px;
+            font-size: 9px;
+            padding-left: 1px;
+        }
+
+        /************************************************* Styling for the second table */
+        .second-table td {
+            padding: 5px;
+            font-size: 13px;
+        }
+
+        /* Make the first column smaller */
+        .second-table td:first-child {
+            width: 23.8%;
+        }
+
+        /* Make the other columns larger */
+        .second-table td:not(:first-child) {
+            width: 100%;
+        }
+        
+        .payee {
+            text-align: center;
+        }
+
+        .payee1 {
+            text-align: center;
+        }
+
+        /************************************************* Styling for the third table */
+
+        .third-table td {
+            padding: 5px;
+            width: 100%;
+            text-align: center;
+            font-size: 13px;
+            position: relative; /* Allow absolute positioning inside */
+        }
+
+        .bottom-text {
+            position: absolute;
+            bottom: 1px; /* Adjust this value if needed */
+            left: 115px;
+            width: 100%;
+            text-align: center;
+            font-size: 13px;
+            
+        }
+
+        .third-table td:first-child{
+            width: 160%;
+        }
+
+        .third-table td:nth-child(2) {
+            width: 300%; /* Set the width of the second column to 60px */
+            
+        }
+
+        .third-table td:nth-child(3) {
+            width: 50%; /* Set the width of the second column to 60px */
+            
+        }
+
+        .third-table td:nth-child(4) {
+            width: 110%; /* Set the width of the second column to 60px */
+            /*padding-right: 10%; */
+        }
+
+        .third-table td:nth-child(5) {
+            width: 150%; /* Set the width of the second column to 60px */
+            /*padding-right: 10%; */
+        }
+    
+
+        /* Increase height for the specific columns in the third table */
+        .third-table tr:nth-child(2) td {
+            height: 350px; /* Increase height for the second row only */
+        }
+
+        /************************************************* Styling for the fourth table */
+        .fourth-table {
+            position: relative; /* Allow absolute positioning within this container */
+        }
+
+        .top-left-box {
+            position: absolute;
+            top: 0;
+            left: 0;
+            padding: 10px;
+            /*background-color: #f0f0f0;*/
+            border: 2px solid #000;
+            font-size: 12px;
+            width: 60px; /* Adjust box width */
+            text-align: left;
+            font-weight: bold;
+        }
+
+        .top-right-box {
+            position: absolute;
+            top: 0;
+            left: 56.7%;
+            padding: 10px;
+            /*background-color: #f0f0f0;*/
+            border: 2px solid #000;
+            font-size: 12px;
+            width: 46.5px; /* Adjust box width */
+            text-align: left;
+            font-weight: bold;
+        }
+
+        /* Existing styles */
+        .fourth-table td {
+            padding: 5px;
+            font-size: 13px;
+            width: 100%;
+            text-align: center;
+        }
+
+        /* Make the first column smaller */
+        .fourth-table td:first-child {
+            width: 133.5%;
+            height: 200px;
+        }
+
+
+    </style>
+</head>
+<body>
+    <!-- First Table -->
+    <table>
+        <tr>
+            <!-- Left Column -->
+            <td class="left-column">
+                <div class="code">
+                    <span>NISU-MCFoSR-BO03</span>
+                    <span>November 1, 2024</span>
+                </div>
+                <img src="http://localhost/budgeting_system/images/nisuBG.jpg" alt="NISU Logo">
+                <div class="text-container">
+                    <span class="title">BUDGET UTILIZATION REQUEST AND STATUS</span>
+                    <span class="subtext">NORTHERN ILOILO STATE UNIVERSITY</span>
+                    <span class="subtext">Estancia, Iloilo</span>
+                </div>
+            </td>
+
+            <!-- Right Column -->
+            <td class="right-column">
+                <div><label>No. :</label> <span>02-207512-2025-00002</span></div>
+                <div><label>Date:</label> <span>January 30, 2025</span></div>
+                <div>
+                    <label>Fund:</label> 
+                    <span>06</span>
+                </div>
+                <div class="highlight-container">
+                    <div class="highlight">Business Related Funds</div>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- Second Table (Merged) -->
+    <div class="second-table">
+        <table>
+            <tr>
+                <td class="payee">
+                    <label>Payee</label>
+                    
+                </td>
+                <td class="payee1">
+                    <label><?php echo isset($payee) ? $payee : 'No Payee Defined'; ?></label>
+                </td>
+            </tr>
+
+            <tr>
+                <td class="payee">
+                    <label>Office</label>
+                </td>
+                <td class="payee1">
+                    <label>Office 1</label>
+                </td>
+            </tr>
+            
+            <tr>
+                <td class="payee">
+                    <label>Address</label>
+                    
+                </td>
+                <td class="payee1">
+                    <label>Address 1</label>
+                    
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Third Table (Merged) -->
+    <div class="third-table">
+        <table>
+            <tr>
+                <td>
+                    <label>Responsibility Center</label>
+                    
+                </td>
+                <td>
+                    <label>Particulars</label>
+                </td>
+                <td>
+                    <label>MFO/PAP</label>
+                </td>
+                <td>
+                    <label>UACS Code</label>
+                </td>
+                <td>
+                    <label>Amount</label>
+                </td>
+            </tr>
+
+            <tr>
+                <td>
+                    <label>Responsibility Center 2</label>
+                </td>
+                <td>
+                    <label>Particulars 2</label>
+                    <div class="bottom-text">Total</div>
+                </td>
+
+                <td>
+                    <label>MFO/PAP 2</label>
+                </td>
+                <td>
+                    <label>UACS Code 2</label>
+                    
+                </td>
+                <td>
+                    <label>Amount 2</label>
+                </td>
+            </tr>
+            
+        </table>
+    </div>
+
+    <!-- Fourth Table (Merged) -->
+    <div class="fourth-table">
+        <div class="top-left-box">A.</div>
+        <table>
+            <tr>
+                <td>
+                    <label>Payee</label>
+                </td>
+                <td>
+                    <div class="top-right-box">B.</div>
+                    <label>Payee 1</label>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+///////////// update_form.php
+
+
+<?php
+session_start();
+include('../includes/db.php');
+
+// CSRF Token Generation (for POST requests)
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
+// Ensure only admin can access this page
+if ($_SESSION['role'] !== 'admin') {
+    header('Location: ../login.php');
+    exit();
+}
+
+// Fetch all users with the count of forms submitted
+if (!isset($_GET['user_id'])) {
+    $stmt = $pdo->prepare("
+        SELECT u.id, u.username, u.role, COUNT(uf.id) AS forms_submitted 
+        FROM users u 
+        LEFT JOIN user_funds uf ON uf.user_id = u.id 
+        GROUP BY u.id
+    ");
+    $stmt->execute();
+    $users = $stmt->fetchAll();
+}
+
+// Fetch user-specific form data if `user_id` is set
+if (isset($_GET['user_id'])) {
+    $user_id = $_GET['user_id'];
+
+    // Fetch the user's username and payee from the user_funds table
+    $stmt = $pdo->prepare("SELECT u.username, uf.payee 
+                           FROM user_funds uf 
+                           JOIN users u ON uf.user_id = u.id 
+                           WHERE uf.user_id = ?");
+    $stmt->execute([$user_id]);
+    $forms = $stmt->fetchAll(); // Fetch all forms for the user
+
+    // If no forms exist for the user, redirect to the 'No Submitted Form' message
+    if (empty($forms)) {
+        header("Location: no_submitted_form.php?user_id=$user_id");
+        exit();
+    }
+
+    // Assuming 'payee' is a field in your user_funds table
+    $payee = htmlspecialchars($forms[0]['payee']); // Or set according to your logic
+}
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Form</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center; /* Align the content at the top */
+            flex-direction: column; /* Stack tables vertically */
+            margin: 0;
+            font-family: Arial, sans-serif;
+            height: auto; /* Allow height to adjust */
+            overflow-y: auto; /* Enable vertical scrolling */
+            margin-top: 5%;
+            margin-bottom: 5%;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            max-width: 800px;
+            table-layout: fixed;
+            margin-bottom: 0px; /* Reduced margin between tables */
+        }
+        tr {
+            display: flex;
+            width: 100%;
+        }
+        td {
+            padding: 20px;
+            border: 1px solid #000;
+            vertical-align: middle;
+            width: 33%; /* Adjust width to have three columns */
+        }
+        .left-column {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            width: 80%;
+        }
+        .left-column img {
+            max-width: 80px;
+            height: auto;
+            margin-right: 20px;
+        }
+        .text-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+        .text-container .title {
+            font-size: 12px; /* Smaller text */
+            font-weight: bold;
+        }
+        .text-container .subtext {
+            font-size: 11.5px; /* Smaller text */
+            font-weight: normal; /* Not bold */
+        }
+        
+        .right-column {
+            display: flex;
+            flex-direction: column;
+            width: 40%; /* The remaining width */
+            padding-left: 1px;
+            align-items: center;
+        }
+
+        .right-column div {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 5px;
+            justify-content: center; /* Center contents */
+            font-size: 10px;
+        }
+        .right-column label {
+            font-weight: bold;
+            text-align: left;
+            flex: 1;
+            padding-right: 10px;
+        }
+        .right-column input, 
+        .right-column span {
+            flex: 2;
+            text-align: center;
+            border: none;
+            outline: none;
+            font-size: 11px;
+            background: transparent;
+            width: 100%;
+        }
+        /* For input elements inside the right column */
+        .right-column input {
+            border-bottom: 1px solid #000;
+            padding: 0.5px; /* Reduce padding to make it smaller */
+        }
+
+        /* For the highlight element */
+        .highlight {
+            background-color:rgb(192, 79, 76); /* Light green background */
+            padding: 1px 2px; /* Even smaller padding */
+            font-size: 5px; /* Smaller font size */
+            font-weight: bold;
+            text-align: center;
+            display: inline-block; /* Makes the background fit the content width */
+            width: auto; /* Makes the width adjust to content, smaller */
+            max-width: 150px; /* Limits the maximum width, can be further reduced */
+            margin-left: 80px; /* Shift the element to the right */
+        }
+
+        .highlight-container {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start; /* Align left */
+            width: 100%;
+            margin-top: 10px; /* Optional: Adds space between the highlight and other elements */
+            margin-left: 10px; /* Adds space to the left to shift it to the right */
+            font-size: 5px; /* Smaller text */
+        }
+
+        .code {
+            margin-bottom: 90px;
+            font-size: 9px;
+            padding-left: 1px;
+        }
+
+        /************************************************* Styling for the second table */
+        .second-table td {
+            padding: 5px;
+            font-size: 13px;
+        }
+
+        /* Make the first column smaller */
+        .second-table td:first-child {
+            width: 23.8%;
+        }
+
+        /* Make the other columns larger */
+        .second-table td:not(:first-child) {
+            width: 100%;
+        }
+        
+        .payee {
+            text-align: center;
+        }
+
+        .payee1 {
+            text-align: center;
+        }
+
+        /************************************************* Styling for the third table */
+
+        .third-table td {
+            padding: 5px;
+            width: 100%;
+            text-align: center;
+            font-size: 13px;
+            position: relative; /* Allow absolute positioning inside */
+        }
+
+        .bottom-text {
+            position: absolute;
+            bottom: 1px; /* Adjust this value if needed */
+            left: 115px;
+            width: 100%;
+            text-align: center;
+            font-size: 13px;
+            
+        }
+
+        .third-table td:first-child{
+            width: 160%;
+        }
+
+        .third-table td:nth-child(2) {
+            width: 300%; /* Set the width of the second column to 60px */
+            
+        }
+
+        .third-table td:nth-child(3) {
+            width: 50%; /* Set the width of the second column to 60px */
+            
+        }
+
+        .third-table td:nth-child(4) {
+            width: 110%; /* Set the width of the second column to 60px */
+            /*padding-right: 10%; */
+        }
+
+        .third-table td:nth-child(5) {
+            width: 150%; /* Set the width of the second column to 60px */
+            /*padding-right: 10%; */
+        }
+    
+
+        /* Increase height for the specific columns in the third table */
+        .third-table tr:nth-child(2) td {
+            height: 350px; /* Increase height for the second row only */
+        }
+
+        /************************************************* Styling for the fourth table */
+        .fourth-table {
+            position: relative; /* Allow absolute positioning within this container */
+        }
+
+        .top-left-box {
+            position: absolute;
+            top: 0;
+            left: 0;
+            padding: 10px;
+            /*background-color: #f0f0f0;*/
+            border: 2px solid #000;
+            font-size: 12px;
+            width: 60px; /* Adjust box width */
+            text-align: left;
+            font-weight: bold;
+        }
+
+        .top-right-box {
+            position: absolute;
+            top: 0;
+            left: 56.7%;
+            padding: 10px;
+            /*background-color: #f0f0f0;*/
+            border: 2px solid #000;
+            font-size: 12px;
+            width: 46.5px; /* Adjust box width */
+            text-align: left;
+            font-weight: bold;
+        }
+
+        /* Existing styles */
+        .fourth-table td {
+            padding: 5px;
+            font-size: 13px;
+            width: 100%;
+            text-align: center;
+        }
+
+        /* Make the first column smaller */
+        .fourth-table td:first-child {
+            width: 133.5%;
+            height: 200px;
+        }
+    </style>
+</head>
+<body>
+    <!-- First Table -->
+    <table>
+        <tr>
+            <!-- Left Column -->
+            <td class="left-column">
+                <div class="code">
+                    <span>NISU-MCFoSR-BO03</span>
+                    <span>November 1, 2024</span>
+                </div>
+                <img src="http://localhost/budgeting_system/images/nisuBG.jpg" alt="NISU Logo">
+                <div class="text-container">
+                    <span class="title">BUDGET UTILIZATION REQUEST AND STATUS</span>
+                    <span class="subtext">NORTHERN ILOILO STATE UNIVERSITY</span>
+                    <span class="subtext">Estancia, Iloilo</span>
+                </div>
+            </td>
+
+            <!-- Right Column -->
+            <td class="right-column">
+                <div><label>No. :</label> <span>02-207512-2025-00002</span></div>
+                <div><label>Date:</label> <span>January 30, 2025</span></div>
+                <div>
+                    <label>Fund:</label> 
+                    <span>06</span>
+                </div>
+                <div class="highlight-container">
+                    <div class="highlight">Business Related Funds</div>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- Second Table (Merged) -->
+    <div class="second-table">
+        <table>
+            <tr>
+                <td class="payee">
+                    <label>Payee</label>
+                </td>
+                <td class="payee1">
+                    <label><?php echo isset($payee) ? $payee : 'No Payee Defined'; ?></label>
+                </td>
+            </tr>
+
+            <tr>
+                <td class="payee">
+                    <label>Office</label>
+                </td>
+                <td class="payee1">
+                    <label>Office 1</label>
+                </td>
+            </tr>
+            
+            <tr>
+                <td class="payee">
+                    <label>Address</label>
+                </td>
+                <td class="payee1">
+                    <label>Address 1</label>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Third Table (Merged) -->
+    <div class="third-table">
+        <table>
+            <tr>
+                <td>
+                    <label>Responsibility Center</label>
+                </td>
+                <td>
+                    <label>Particulars</label>
+                </td>
+                <td>
+                    <label>MFO/PAP</label>
+                </td>
+                <td>
+                    <label>UACS Code</label>
+                </td>
+                <td>
+                    <label>Amount</label>
+                </td>
+            </tr>
+
+            <tr>
+                <td>
+                    <label>Responsibility Center 2</label>
+                </td>
+                <td>
+                    <label>Particulars 2</label>
+                    <div class="bottom-text">Total</div>
+                </td>
+
+                <td>
+                    <label>MFO/PAP 2</label>
+                </td>
+                <td>
+                    <label>UACS Code 2</label>
+                </td>
+                <td>
+                    <label>Amount 2</label>
+                </td>
+            </tr>
+            
+        </table>
+    </div>
+
+    <!-- Fourth Table (Merged) -->
+    <div class="fourth-table">
+        <div class="top-left-box">A.</div>
+        <table>
+            <tr>
+                <td>
+                    <label>Payee</label>
+                </td>
+                <td>
+                    <div class="top-right-box">B.</div>
+                    <label>Payee 1</label>
+                </td>
+            </tr>
+        </table>
+    </div>
+    
+</body>
+</html>
+
+
+
+
+
+
+
+-----------------------------------------------------------------------------------------------------------------------
+
+
+
+
+------------------------------------------------------------------------------------------------------------
+
+        <?php
+session_start();
+include('includes/db.php');
+
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $username = $_POST['username'];
+    $password = $_POST['password'];
+    $role = $_POST['role']; // 'admin' or 'user'
+    $office_name = $_POST['office_name'] ?? ''; // Get office name if user
+
+    // Hash the password for security
+    $hashed_password = password_hash($password, PASSWORD_BCRYPT);
+
+    // Admin Registration
+if ($role === 'admin') {
+    // Check if an admin already exists
+    $stmt = $pdo->prepare("SELECT * FROM admins WHERE username = ?");
+    $stmt->execute([$username]);
+    $existingAdmin = $stmt->fetch();
+    
+    if ($existingAdmin) {
+        $error = "Admin with this username already exists!";
+    } else {
+        // Insert new admin into the admins table
+        $stmt = $pdo->prepare("INSERT INTO admins (username, password, role) VALUES (?, ?, ?)");
+        $stmt->execute([$username, $hashed_password, 'admin']);
+
+        // Check if the insert was successful
+        if ($stmt->rowCount()) {
+            header('Location: login.php'); // Redirect to login page after successful registration
+            exit();
+        } else {
+            $error = "There was an error during registration.";
+        }
+    }
+} else {
+    // User Registration
+    // Check if a user already exists in the users table
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
+    $stmt->execute([$username]);
+    $existingUser = $stmt->fetch();
+    
+    if ($existingUser) {
+        $error = "User with this username already exists!";
+    } else {
+        // Insert new user with office name into the users table
+        $stmt = $pdo->prepare("INSERT INTO users (username, password, role, office_name) VALUES (?, ?, ?, ?)");
+        $stmt->execute([$username, $hashed_password, 'user', $office_name]);
+
+        // Check if the insert was successful
+        if ($stmt->rowCount()) {
+            header('Location: login.php'); // Redirect to login page after successful registration
+            exit();
+        } else {
+            $error = "There was an error during registration.";
+        }
+    }
+}}
+
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom, #e3f2fd, #bbdefb);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .register-container {
+            width: 100%;
+            max-width: 400px;
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        label {
+            font-size: 16px;
+            color: #555;
+            margin-bottom: 8px;
+            text-align: left;
+            display: block;
+        }
+
+        input[type="text"],
+        input[type="password"],
+        select,
+        input[type="submit"] {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0 20px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        input[type="submit"] {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+
+        .error {
+            color: red;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .login-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .login-btn:hover {
+            background-color: #45a049;
+        }
+
+        #office-name-section {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Login button in top right corner -->
+    <button class="login-btn" onclick="window.location.href='login.php'">Login</button>
+
+    <div class="register-container">
+        <h1>Register</h1>
+        
+        <?php if (isset($error)) echo "<p class='error'>$error</p>"; ?>
+        
+        <form method="POST" action="register.php">
+            <label for="username">Username:</label>
+            <input type="text" name="username" required>
+            
+            <label for="password">Password:</label>
+            <input type="password" name="password" required>
+            
+            <label for="role">Role:</label>
+            <select name="role" id="role" required>
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
+            </select>
+
+            <!-- Office Name field (only for users) -->
+            <div id="office-name-section">
+                <label for="office_name">Office Name:</label>
+                <input type="text" name="office_name" required>
+            </div>
+
+            <input type="submit" name="register" value="Register">
+        </form>
+    </div>
+
+    <script>
+        const roleSelect = document.getElementById('role');
+        const officeNameSection = document.getElementById('office-name-section');
+
+        roleSelect.addEventListener('change', () => {
+            if (roleSelect.value === 'user') {
+            officeNameSection.style.display = 'block';
+            document.querySelector('input[name="office_name"]').setAttribute('required', 'required');
+        } else {
+            officeNameSection.style.display = 'none';
+            document.querySelector('input[name="office_name"]').removeAttribute('required');
+        }
+
+        });
+
+        // If the page is loaded with the user role selected, show office name input
+        if (roleSelect.value === 'user') {
+            officeNameSection.style.display = 'block';
+        }
+    </script>
+
+</body>
+</html>

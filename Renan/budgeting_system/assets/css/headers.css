@@ -1,0 +1,60 @@
+
+
+header {
+    background-color: #9678bc;
+    color: white;
+    padding: 10px 20px;
+    text-align: center;
+    position: fixed; /* Make the header fixed at the top */
+    top: 0;
+    left: 250px; /* Ensures it's aligned to the left */
+    right: 0;
+}
+
+/* Dropdown container */
+.dropdown {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 9999;
+}
+
+/* Button to trigger dropdown */
+.dropdown-btn {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    border: none;
+    border-radius: 4px;
+}
+
+/* Dropdown menu */
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #f9f9f9;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+    z-index: 9999;
+    margin-top: 10px;
+    right: 5px;
+    font-size: 13px;
+}
+
+.dropdown-content a {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+}
+
+.dropdown-content a:hover {
+    background-color: #ddd;
+}
+
+/* Show dropdown when toggled */
+.dropdown.show .dropdown-content {
+    display: block;
+}

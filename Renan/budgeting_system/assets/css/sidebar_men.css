@@ -1,0 +1,65 @@
+/* Sidebar */
+.sidebar {
+    width: 250px;
+    background-color: #9678bc;
+    color: white;
+    padding-top: 20px;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    
+}
+
+.sidebar .username {
+    text-align: center;
+    margin-top: -20px;
+    color:rgb(255, 255, 255);
+    background-color: #0a3042;
+    padding: 20px 20px 15px 20px;
+}
+
+.sidebar .username p {
+    margin: 0;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.sidebar a {
+    display: block;
+    padding: 5px 20px;
+    text-decoration: none;
+    color: white;
+    margin: 10px 0 10px 20px;
+    background-color:rgb(144, 85, 160);
+    border-radius: 10px;
+    width: 50%;
+
+}
+
+.sidebar a:hover {
+    background-color: #4fb5e8;
+}
+
+/* Active Link */
+.sidebar a.active {
+    background-color:rgb(92, 63, 177);
+    font-weight: bold; /* Makes the active link bold */
+}
+
+.sub-links {
+    margin-left: 20px;
+    display: flex;
+    flex-direction: column;
+    margin-top: -30px;
+    margin-bottom: -10px;
+    padding: 10px;
+}
+
+.sub-links a {
+    font-size: 15px;
+    text-decoration: none;
+    color: #ffffff;
+    padding-left: 10px;
+    padding: 5px;
+}

@@ -1,0 +1,243 @@
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center; /* Align the content at the top */
+    flex-direction: column; /* Stack tables vertically */
+    margin: 0;
+    font-family: Arial, sans-serif;
+    height: auto; /* Allow height to adjust */
+    overflow-y: auto; /* Enable vertical scrolling */
+    margin-top: 5%;
+    margin-bottom: 5%;
+}
+table {
+    border-collapse: collapse;
+    width: 100%;
+    max-width: 800px;
+    table-layout: fixed;
+    margin-bottom: 0px; /* Reduced margin between tables */
+}
+tr {
+    display: flex;
+    width: 100%;
+}
+td {
+    padding: 20px;
+    border: 1px solid #000;
+    vertical-align: middle;
+    width: 33%; /* Adjust width to have three columns */
+}
+.left-column {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    width: 80%;
+}
+.left-column img {
+    max-width: 80px;
+    height: auto;
+    margin-right: 20px;
+}
+.text-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+.text-container .title {
+    font-size: 12px; /* Smaller text */
+    font-weight: bold;
+}
+.text-container .subtext {
+    font-size: 11.5px; /* Smaller text */
+    font-weight: normal; /* Not bold */
+}
+
+.right-column {
+    display: flex;
+    flex-direction: column;
+    width: 40%; /* The remaining width */
+    padding-left: 1px;
+    align-items: center;
+}
+
+.right-column div {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 5px;
+    justify-content: center; /* Center contents */
+    font-size: 10px;
+}
+.right-column label {
+    font-weight: bold;
+    text-align: left;
+    flex: 1;
+    padding-right: 10px;
+}
+.right-column input, 
+.right-column span {
+    flex: 2;
+    text-align: center;
+    border: none;
+    outline: none;
+    font-size: 11px;
+    background: transparent;
+    width: 100%;
+}
+/* For input elements inside the right column */
+.right-column input {
+    border-bottom: 1px solid #000;
+    padding: 0.5px; /* Reduce padding to make it smaller */
+}
+
+/* For the highlight element */
+.highlight {
+    background-color:rgb(192, 79, 76); /* Light green background */
+    padding: 1px 2px; /* Even smaller padding */
+    font-size: 5px; /* Smaller font size */
+    font-weight: bold;
+    text-align: center;
+    display: inline-block; /* Makes the background fit the content width */
+    width: auto; /* Makes the width adjust to content, smaller */
+    max-width: 150px; /* Limits the maximum width, can be further reduced */
+    margin-left: 80px; /* Shift the element to the right */
+}
+
+.highlight-container {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start; /* Align left */
+    width: 100%;
+    margin-top: 10px; /* Optional: Adds space between the highlight and other elements */
+    margin-left: 10px; /* Adds space to the left to shift it to the right */
+    font-size: 5px; /* Smaller text */
+}
+
+.code {
+    margin-bottom: 90px;
+    font-size: 9px;
+    padding-left: 1px;
+}
+
+/************************************************* Styling for the second table */
+.second-table td {
+    padding: 5px;
+    font-size: 13px;
+}
+
+/* Make the first column smaller */
+.second-table td:first-child {
+    width: 23.8%;
+}
+
+/* Make the other columns larger */
+.second-table td:not(:first-child) {
+    width: 100%;
+}
+
+.payee {
+    text-align: center;
+}
+
+.payee1 {
+    text-align: center;
+}
+
+/************************************************* Styling for the third table */
+
+.third-table td {
+    padding: 5px;
+    width: 100%;
+    text-align: center;
+    font-size: 13px;
+    position: relative; /* Allow absolute positioning inside */
+}
+
+.bottom-text {
+    position: absolute;
+    bottom: 1px; /* Adjust this value if needed */
+    left: 115px;
+    width: 100%;
+    text-align: center;
+    font-size: 13px;
+    
+}
+
+.third-table td:first-child{
+    width: 160%;
+}
+
+.third-table td:nth-child(2) {
+    width: 300%; /* Set the width of the second column to 60px */
+    
+}
+
+.third-table td:nth-child(3) {
+    width: 50%; /* Set the width of the second column to 60px */
+    
+}
+
+.third-table td:nth-child(4) {
+    width: 110%; /* Set the width of the second column to 60px */
+    /*padding-right: 10%; */
+}
+
+.third-table td:nth-child(5) {
+    width: 150%; /* Set the width of the second column to 60px */
+    /*padding-right: 10%; */
+}
+
+
+/* Increase height for the specific columns in the third table */
+.third-table tr:nth-child(2) td {
+    height: 350px; /* Increase height for the second row only */
+}
+
+/************************************************* Styling for the fourth table */
+.fourth-table {
+    position: relative; /* Allow absolute positioning within this container */
+}
+
+/*Column A*/
+.top-left-box {
+    position: absolute;
+    top: 0;
+    left: 0;
+    padding: 10px;
+    /*background-color: #f0f0f0;*/
+    border: 2px solid #000;
+    font-size: 12px;
+    width: 60px; /* Adjust box width */
+    text-align: left;
+    font-weight: bold;
+}
+
+/*Column B*/
+.top-right-box {
+    position: absolute;
+    top: 0;
+    left: 56.7%;
+    padding: 10px;
+    /*background-color: #f0f0f0;*/
+    border: 2px solid #000;
+    font-size: 12px;
+    width: 46.5px; /* Adjust box width */
+    text-align: left;
+    font-weight: bold;
+}
+
+/* Existing styles */
+.fourth-table td {
+    padding: 5px;
+    font-size: 13px;
+    width: 100%;
+    text-align: center;
+}
+
+/* Make the first column smaller */
+.fourth-table td:first-child {
+    width: 133.5%;
+    height: 200px;
+}
